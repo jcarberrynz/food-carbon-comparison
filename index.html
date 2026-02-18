@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Carbon Footprint Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .sidebar {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 1.5em;
+        }
+
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+
+        .category {
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .category h3 {
+            color: #34495e;
+            margin: 0;
+            font-size: 1.05em;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .category h3:hover {
+            background: #e9ecef;
+        }
+
+        .category h3::after {
+            content: '▼';
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+
+        .category.collapsed h3::after {
+            transform: rotate(-90deg);
+        }
+
+        .category-content {
+            padding: 15px;
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+
+        .category.collapsed .category-content {
+            max-height: 0;
+            padding: 0 15px;
+        }
+
+        .food-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .food-item.selected {
+            background: #e8f4f8;
+            border-left-color: #667eea;
+        }
+
+        .food-item label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .food-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .quantity-control {
+            margin-top: 8px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .food-item.selected .quantity-control {
+            display: flex;
+        }
+
+        .quantity-control input {
+            width: 70px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .quantity-control span {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+
+        .chart-header {
+            margin-bottom: 25px;
+        }
+
+        .chart-header h2 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .chart-subheader {
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .chart-bars {
+            margin-top: 30px;
+        }
+
+        .bar-item {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.95em;
+        }
+
+        .bar-name {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .bar-value {
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .bar-bg {
+            background: #ecf0f1;
+            height: 30px;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .info-section {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-section h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #34495e;
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+
+        .methodology {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+
+        .methodology h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .methodology p {
+            color: #34495e;
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌍 Food Carbon Footprint Calculator</h1>
+            <p class="subtitle">Compare the climate impact of different foods</p>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h2>Select Foods</h2>
+                <button class="clear-btn" onclick="clearAll()">Clear All Selections</button>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🥩 Meat</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="beef" data-carbon="99.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Beef
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="lamb" data-carbon="39.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Lamb
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="goat" data-carbon="32.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Goat
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="pork" data-carbon="12.3">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Pork
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="chicken" data-carbon="9.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Chicken
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="duck" data-carbon="11.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Duck
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="venison" data-carbon="8.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Venison (deer)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🐟 Fish & Seafood</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="fish-farmed" data-carbon="13.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Fish (farmed, general)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="fish-wild" data-carbon="5.1">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Fish (wild caught, general)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="prawns" data-carbon="26.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Prawns (farmed)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="salmon-farmed" data-carbon="13.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Salmon (farmed)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="tuna" data-carbon="6.1">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Tuna
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="salmon-wild" data-carbon="5.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Salmon (wild caught)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cod" data-carbon="5.3">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cod
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="crab" data-carbon="11.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Crab
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="lobster" data-carbon="14.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Lobster
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="squid" data-carbon="5.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Squid/Calamari
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="mussels" data-carbon="1.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Mussels
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="oysters" data-carbon="1.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Oysters
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🥛 Dairy</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="cheese" data-carbon="23.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cheese (average)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cheese-cheddar" data-carbon="21.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cheddar cheese
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cheese-mozzarella" data-carbon="18.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Mozzarella cheese
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="butter" data-carbon="23.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Butter
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cream" data-carbon="7.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cream
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="yogurt" data-carbon="2.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Yogurt
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="eggs" data-carbon="4.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Eggs
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (~17 eggs)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="ice-cream" data-carbon="5.1">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Ice cream
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🌾 Grains & Cereals</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="rice" data-carbon="4.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Rice
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="oats" data-carbon="2.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Oats
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="wheat-bread" data-carbon="1.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Wheat bread
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="wheat" data-carbon="1.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Wheat (grain)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="pasta" data-carbon="1.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Pasta (dried)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="noodles" data-carbon="1.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Noodles
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="corn" data-carbon="1.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Corn/Maize
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="barley" data-carbon="1.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Barley
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="quinoa" data-carbon="2.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Quinoa
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🫘 Pulses & Legumes</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="tofu" data-carbon="3.0">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Tofu
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="tempeh" data-carbon="2.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Tempeh
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="soybeans" data-carbon="2.0">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Soybeans
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="beans" data-carbon="2.0">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Beans (general)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="chickpeas" data-carbon="1.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Chickpeas
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="lentils" data-carbon="1.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Lentils
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="black-beans" data-carbon="2.1">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Black beans
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="peanuts" data-carbon="3.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Peanuts
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="peas" data-carbon="0.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Peas
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🥬 Vegetables</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="tomatoes" data-carbon="2.1">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Tomatoes
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="sweet-potatoes" data-carbon="0.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Sweet potatoes
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="potatoes" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Potatoes
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="broccoli" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Broccoli
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cauliflower" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cauliflower
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cabbage" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cabbage
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="brussels-sprouts" data-carbon="0.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Brussels sprouts
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="carrots" data-carbon="0.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Carrots
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="onions" data-carbon="0.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Onions
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="beetroot" data-carbon="0.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Beetroot
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="spinach" data-carbon="0.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Spinach
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="kale" data-carbon="0.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Kale
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="lettuce" data-carbon="0.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Lettuce
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="peppers" data-carbon="1.3">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Peppers (bell)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cucumbers" data-carbon="0.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cucumbers
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="zucchini" data-carbon="0.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Zucchini/Courgette
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="eggplant" data-carbon="0.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Eggplant/Aubergine
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="mushrooms" data-carbon="2.0">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Mushrooms
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="asparagus" data-carbon="0.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Asparagus
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="green-beans" data-carbon="0.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Green beans
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="celery" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Celery
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="garlic" data-carbon="0.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Garlic
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🍎 Fruits</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="berries" data-carbon="1.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Berries (mixed)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="strawberries" data-carbon="1.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Strawberries
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="blueberries" data-carbon="1.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Blueberries
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="raspberries" data-carbon="1.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Raspberries
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="bananas" data-carbon="0.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Bananas
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="apples" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Apples
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="pears" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Pears
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="oranges" data-carbon="0.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Oranges
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="lemons" data-carbon="0.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Lemons
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="grapes" data-carbon="1.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Grapes
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="pineapple" data-carbon="0.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Pineapple
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="mango" data-carbon="1.3">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Mango
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="avocado" data-carbon="2.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Avocado
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="watermelon" data-carbon="0.3">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Watermelon
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="melon" data-carbon="0.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Melon (cantaloupe)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="peaches" data-carbon="0.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Peaches
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="plums" data-carbon="0.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Plums
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cherries" data-carbon="1.1">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cherries
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🥜 Nuts & Seeds</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="almonds" data-carbon="5.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Almonds
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="walnuts" data-carbon="3.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Walnuts
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="cashews" data-carbon="4.3">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cashews
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="pistachios" data-carbon="4.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Pistachios
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="hazelnuts" data-carbon="3.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Hazelnuts
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="sunflower-seeds" data-carbon="1.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Sunflower seeds
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="pumpkin-seeds" data-carbon="1.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Pumpkin seeds
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="chia-seeds" data-carbon="2.1">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Chia seeds
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🍫 Processed Foods & Beverages</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="chocolate" data-carbon="34.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Chocolate (dark)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="coffee" data-carbon="28.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Coffee (roasted beans)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="palm-oil" data-carbon="7.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Palm oil
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="olive-oil" data-carbon="5.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Olive oil
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="sunflower-oil" data-carbon="3.6">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Sunflower oil
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="coconut-oil" data-carbon="6.4">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Coconut oil
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="sugar" data-carbon="3.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Sugar (cane/beet)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="honey" data-carbon="5.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Honey
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="tea" data-carbon="16.5">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Tea (dried leaves)
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="wine" data-carbon="1.8">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Wine
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="beer" data-carbon="0.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Beer
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h3 onclick="toggleCategory(this)">🥤 Milks</h3>
+                    <div class="category-content">
+                    <div class="food-item" data-food="milk" data-carbon="3.2">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Cow's milk
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="oat-milk" data-carbon="0.9">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Oat milk
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="soy-milk" data-carbon="1.0">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Soy milk
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="almond-milk" data-carbon="0.7">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Almond milk
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    <div class="food-item" data-food="coconut-milk" data-carbon="1.3">
+                        <label>
+                            <input type="checkbox" onchange="toggleFood(this)">
+                            Coconut milk
+                        </label>
+                        <div class="quantity-control">
+                            <input type="number" value="1" min="0.1" step="0.1" onchange="updateQuantity(this)">
+                            <span>kg (L)</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2>Carbon Footprint Comparison</h2>
+                    <p class="chart-subheader">Emissions measured in kilograms of CO₂ equivalent (kg CO₂e)</p>
+                </div>
+
+                <div id="chart-content">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M3 3v18h18" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M7 16l4-4 3 3 5-8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h3>Select foods to compare their carbon footprints</h3>
+                        <p>Choose items from the sidebar to see how they compare</p>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>Why does this matter?</h3>
+                    <p>Food production accounts for about 26% of global greenhouse gas emissions. Different foods have vastly different carbon footprints - beef can emit 50-100 times more CO₂ than vegetables. Understanding these differences helps us make more climate-friendly food choices.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="methodology">
+            <h2>Methodology & Data Sources</h2>
+            <p><strong>Carbon footprint values</strong> are measured in kilograms of CO₂ equivalent (kg CO₂e) per kilogram of food product. These include emissions from:</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Land use change (e.g., deforestation)</li>
+                <li>Farm activities (machinery, fertilizers)</li>
+                <li>Animal feed production</li>
+                <li>Processing and packaging</li>
+                <li>Transport</li>
+                <li>Retail</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Data source:</strong> Values are based on meta-analysis by Poore & Nemecek (2018) published in <em>Science</em>, which analyzed environmental impacts across ~38,000 farms and 1,600 processors, covering ~90% of global food production.</p>
+            <p style="margin-top: 10px;"><strong>Note:</strong> These are global averages. Actual emissions vary by farming practices, location, season, and transportation distance. Local, seasonal produce often has lower emissions than the averages shown here.</p>
+            <p style="margin-top: 10px;"><strong>Tool inspiration:</strong> This calculator is inspired by Hannah Ritchie's energy comparison tool and built with Claude.</p>
+        </div>
+    </div>
+
+    <script>
+        let selectedFoods = new Map();
+
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            category.classList.toggle('collapsed');
+        }
+
+        function toggleFood(checkbox) {
+            const foodItem = checkbox.closest('.food-item');
+            const foodName = foodItem.dataset.food;
+            
+            if (checkbox.checked) {
+                foodItem.classList.add('selected');
+                const quantity = parseFloat(foodItem.querySelector('input[type="number"]').value);
+                selectedFoods.set(foodName, {
+                    name: foodItem.querySelector('label').textContent.trim(),
+                    carbonPerKg: parseFloat(foodItem.dataset.carbon),
+                    quantity: quantity
+                });
+            } else {
+                foodItem.classList.remove('selected');
+                selectedFoods.delete(foodName);
+            }
+            
+            updateChart();
+        }
+
+        function updateQuantity(input) {
+            const foodItem = input.closest('.food-item');
+            const foodName = foodItem.dataset.food;
+            
+            if (selectedFoods.has(foodName)) {
+                const food = selectedFoods.get(foodName);
+                food.quantity = parseFloat(input.value);
+                selectedFoods.set(foodName, food);
+                updateChart();
+            }
+        }
+
+        function clearAll() {
+            selectedFoods.clear();
+            document.querySelectorAll('.food-item').forEach(item => {
+                item.classList.remove('selected');
+                item.querySelector('input[type="checkbox"]').checked = false;
+                item.querySelector('input[type="number"]').value = '1';
+            });
+            updateChart();
+        }
+
+        function updateChart() {
+            const chartContent = document.getElementById('chart-content');
+            
+            if (selectedFoods.size === 0) {
+                chartContent.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M3 3v18h18" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M7 16l4-4 3 3 5-8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h3>Select foods to compare their carbon footprints</h3>
+                        <p>Choose items from the sidebar to see how they compare</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate total emissions for each food
+            const foodsWithEmissions = Array.from(selectedFoods.entries()).map(([key, food]) => ({
+                key,
+                ...food,
+                totalEmissions: food.carbonPerKg * food.quantity
+            }));
+
+            // Sort by total emissions
+            foodsWithEmissions.sort((a, b) => b.totalEmissions - a.totalEmissions);
+
+            // Find max for scaling
+            const maxEmissions = Math.max(...foodsWithEmissions.map(f => f.totalEmissions));
+
+            // Build chart HTML
+            let chartHTML = '<div class="chart-bars">';
+            
+            foodsWithEmissions.forEach(food => {
+                const percentage = (food.totalEmissions / maxEmissions) * 100;
+                chartHTML += `
+                    <div class="bar-item">
+                        <div class="bar-label">
+                            <span class="bar-name">${food.name} (${food.quantity} kg)</span>
+                            <span class="bar-value">${food.totalEmissions.toFixed(1)} kg CO₂e</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            chartHTML += '</div>';
+            
+            // Add total
+            const totalEmissions = foodsWithEmissions.reduce((sum, food) => sum + food.totalEmissions, 0);
+            chartHTML += `
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                    <h3 style="color: #2c3e50; margin-bottom: 5px;">Total Carbon Footprint</h3>
+                    <p style="font-size: 2em; font-weight: bold; color: #667eea; margin: 0;">${totalEmissions.toFixed(1)} kg CO₂e</p>
+                    <p style="color: #7f8c8d; margin-top: 5px; font-size: 0.9em;">Equivalent to driving ~${(totalEmissions / 0.2).toFixed(0)} km in an average petrol car</p>
+                </div>
+            `;
+
+            chartContent.innerHTML = chartHTML;
+        }
+    </script>
+</body>
+</html>
